@@ -3,7 +3,7 @@ window.RecurringSelectDialog =
     constructor: (@recurring_selector) ->
       @current_rule = @recurring_selector.recurring_select('current_rule')
       @initDialogBox()
-      if not @current_rule.hash? or not @current_rule.hash.rule_type?
+      if not @current_rule.hash? or not @current_rule.hash.rrules[0].rule_type?
         @freqChanged()
       else
         setTimeout @positionDialogVert, 10 # allow initial render
@@ -73,7 +73,7 @@ window.RecurringSelectDialog =
 
     freqInit: ->
       @freq_select = @outer_holder.find ".rs_frequency"
-      if @current_rule.hash? && (rule_type = @current_rule.hash.rule_type)?
+      if @current_rule.hash? && (rule_type = @current_rule.hash.rrules[0].rule_type)?
         if rule_type.search(/Weekly/) != -1
           @freq_select.prop('selectedIndex', 1)
           @initWeeklyOptions()
@@ -90,7 +90,7 @@ window.RecurringSelectDialog =
     initDailyOptions: ->
       section = @content.find('.daily_options')
       interval_input = section.find('.rs_daily_interval')
-      interval_input.val(@current_rule.hash.interval)
+      interval_input.val(@current_rule.hash.rrules[0].interval)
       interval_input.on "change keyup", @intervalChanged
       section.show()
 
@@ -99,7 +99,7 @@ window.RecurringSelectDialog =
 
       # connect the interval field
       interval_input = section.find('.rs_weekly_interval')
-      interval_input.val(@current_rule.hash.interval)
+      interval_input.val(@current_rule.hash.rrules[0].interval)
       interval_input.on "change keyup", @intervalChanged
 
       # clear selected days
@@ -107,8 +107,8 @@ window.RecurringSelectDialog =
         $(element).removeClass("selected")
 
       # connect the day fields
-      if @current_rule.hash.validations? && @current_rule.hash.validations.day?
-        $(@current_rule.hash.validations.day).each (index, val) ->
+      if @current_rule.hash.rrules[0].validations? && @current_rule.hash.rrules[0].validations.day?
+        $(@current_rule.hash.rrules[0].validations.day).each (index, val) ->
           section.find(".day_holder a[data-value='"+val+"']").addClass("selected")
 
       section.off('click', '.day_holder a').on "click", ".day_holder a", @daysChanged
@@ -118,16 +118,16 @@ window.RecurringSelectDialog =
     initMonthlyOptions: ->
       section = @content.find('.monthly_options')
       interval_input = section.find('.rs_monthly_interval')
-      interval_input.val(@current_rule.hash.interval)
+      interval_input.val(@current_rule.hash.rrules[0].interval)
       interval_input.on "change keyup", @intervalChanged
 
-      @current_rule.hash.validations ||= {}
-      @current_rule.hash.validations.day_of_month ||= []
-      @current_rule.hash.validations.day_of_week ||= {}
+      @current_rule.hash.rrules[0].validations ||= {}
+      @current_rule.hash.rrules[0].validations.day_of_month ||= []
+      @current_rule.hash.rrules[0].validations.day_of_week ||= {}
       @init_calendar_days(section)
       @init_calendar_weeks(section)
 
-      in_week_mode = Object.keys(@current_rule.hash.validations.day_of_week).length > 0
+      in_week_mode = Object.keys(@current_rule.hash.rrules[0].validations.day_of_week).length > 0
       section.find(".monthly_rule_type_week").prop("checked", in_week_mode)
       section.find(".monthly_rule_type_day").prop("checked", !in_week_mode)
       @toggle_month_view()
@@ -137,7 +137,7 @@ window.RecurringSelectDialog =
     initYearlyOptions: ->
       section = @content.find('.yearly_options')
       interval_input = section.find('.rs_yearly_interval')
-      interval_input.val(@current_rule.hash.interval)
+      interval_input.val(@current_rule.hash.rrules[0].interval)
       interval_input.on "change keyup", @intervalChanged
       section.show()
 
@@ -164,12 +164,12 @@ window.RecurringSelectDialog =
         @summaryFetch()
 
     summaryFetch: ->
-      return if !(@current_rule.hash? && (rule_type = @current_rule.hash.rule_type)?)
-      @current_rule.hash['week_start'] = $.fn.recurring_select.texts["first_day_of_week"]
+      return if !(@current_rule.hash? && (rule_type = @current_rule.hash.rrules[0].rule_type)?)
+      @current_rule.hash.rrules[0]['week_start'] = $.fn.recurring_select.texts["first_day_of_week"]
       $.ajax
         url: "<%= Rails.application.config.action_controller.relative_url_root %>/recurring_select/translate/#{$.fn.recurring_select.texts["locale_iso_code"]}",
         type: "POST",
-        data: @current_rule.hash
+        data: @current_rule.hash.rrules[0]
         success: @summaryFetchSuccess
 
     summaryFetchSuccess: (data) =>
@@ -182,13 +182,13 @@ window.RecurringSelectDialog =
       monthly_calendar.html ""
       for num in [1..31]
         monthly_calendar.append (day_link = $(document.createElement("a")).text(num))
-        if $.inArray(num, @current_rule.hash.validations.day_of_month) != -1
+        if $.inArray(num, @current_rule.hash.rrules[0].validations.day_of_month) != -1
           day_link.addClass("selected")
 
       # add last day of month button
       monthly_calendar.append (end_of_month_link = $(document.createElement("a")).text($.fn.recurring_select.texts["last_day"]))
       end_of_month_link.addClass("end_of_month")
-      if $.inArray(-1, @current_rule.hash.validations.day_of_month) != -1
+      if $.inArray(-1, @current_rule.hash.rrules[0].validations.day_of_month) != -1
         end_of_month_link.addClass("selected")
 
       monthly_calendar.find("a").on "click tap", @dateOfMonthChanged
@@ -210,7 +210,7 @@ window.RecurringSelectDialog =
             day_link.attr("instance", num)
             monthly_calendar.append day_link
 
-      $.each @current_rule.hash.validations.day_of_week, (key, value) ->
+      $.each @current_rule.hash.rrules[0].validations.day_of_week, (key, value) ->
         $.each value, (index, instance) ->
           section.find("a[day='#{key}'][instance='#{instance}']").addClass("selected")
       monthly_calendar.find("a").on "click tap", @weekOfMonthChanged
@@ -226,27 +226,29 @@ window.RecurringSelectDialog =
       @current_rule.hash = null unless $.isPlainObject(@current_rule.hash) # for custom values
 
       @current_rule.hash ||= {}
-      @current_rule.hash.interval = 1
-      @current_rule.hash.until = null
-      @current_rule.hash.count = null
-      @current_rule.hash.validations = null
+      @current_rule.hash['rrules'] = []
+      @current_rule.hash.rrules[0] ||= {}
+      @current_rule.hash.rrules[0].interval = 1
+      @current_rule.hash.rrules[0].until = null
+      @current_rule.hash.rrules[0].count = null
+      @current_rule.hash.rrules[0].validations = null
       @content.find(".freq_option_section").hide();
       @content.find("input[type=radio], input[type=checkbox]").prop("checked", false)
       switch @freq_select.val()
         when "Weekly"
-          @current_rule.hash.rule_type = "IceCube::WeeklyRule"
+          @current_rule.hash.rrules[0].rule_type = "IceCube::WeeklyRule"
           @current_rule.str = $.fn.recurring_select.texts["weekly"]
           @initWeeklyOptions()
         when "Monthly"
-          @current_rule.hash.rule_type = "IceCube::MonthlyRule"
+          @current_rule.hash.rrules[0].rule_type = "IceCube::MonthlyRule"
           @current_rule.str = $.fn.recurring_select.texts["monthly"]
           @initMonthlyOptions()
         when "Yearly"
-          @current_rule.hash.rule_type = "IceCube::YearlyRule"
+          @current_rule.hash.rrules[0].rule_type = "IceCube::YearlyRule"
           @current_rule.str = $.fn.recurring_select.texts["yearly"]
           @initYearlyOptions()
         else
-          @current_rule.hash.rule_type = "IceCube::DailyRule"
+          @current_rule.hash.rrules[0].rule_type = "IceCube::DailyRule"
           @current_rule.str = $.fn.recurring_select.texts["daily"]
           @initDailyOptions()
       @summaryUpdate()
@@ -254,47 +256,47 @@ window.RecurringSelectDialog =
 
     intervalChanged: (event) =>
       @current_rule.str = null
-      @current_rule.hash ||= {}
-      @current_rule.hash.interval = parseInt($(event.currentTarget).val())
-      if @current_rule.hash.interval < 1 || isNaN(@current_rule.hash.interval)
-        @current_rule.hash.interval = 1
+      @current_rule.hash.rrules[0] ||= {}
+      @current_rule.hash.rrules[0].interval = parseInt($(event.currentTarget).val())
+      if @current_rule.hash.rrules[0].interval < 1 || isNaN(@current_rule.hash.rrules[0].interval)
+        @current_rule.hash.rrules[0].interval = 1
       @summaryUpdate()
 
     daysChanged: (event) =>
       $(event.currentTarget).toggleClass("selected")
       @current_rule.str = null
-      @current_rule.hash ||= {}
-      @current_rule.hash.validations = {}
+      @current_rule.hash.rrules[0] ||= {}
+      @current_rule.hash.rrules[0].validations = {}
       raw_days = @content.find(".day_holder a.selected").map -> parseInt($(this).data("value"))
-      @current_rule.hash.validations.day = raw_days.get()
+      @current_rule.hash.rrules[0].validations.day = raw_days.get()
       @summaryUpdate()
       false # this prevents default and propogation
 
     dateOfMonthChanged: (event) =>
       $(event.currentTarget).toggleClass("selected")
       @current_rule.str = null
-      @current_rule.hash ||= {}
-      @current_rule.hash.validations = {}
+      @current_rule.hash.rrules[0] ||= {}
+      @current_rule.hash.rrules[0].validations = {}
       raw_days = @content.find(".monthly_options .rs_calendar_day a.selected").map ->
         res = if $(this).text() == $.fn.recurring_select.texts["last_day"] then -1 else parseInt($(this).text())
         res
-      @current_rule.hash.validations.day_of_week = {}
-      @current_rule.hash.validations.day_of_month = raw_days.get()
+      @current_rule.hash.rrules[0].validations.day_of_week = {}
+      @current_rule.hash.rrules[0].validations.day_of_month = raw_days.get()
       @summaryUpdate()
       false
 
     weekOfMonthChanged: (event) =>
       $(event.currentTarget).toggleClass("selected")
       @current_rule.str = null
-      @current_rule.hash ||= {}
-      @current_rule.hash.validations = {}
-      @current_rule.hash.validations.day_of_month = []
-      @current_rule.hash.validations.day_of_week = {}
+      @current_rule.hash.rrules[0] ||= {}
+      @current_rule.hash.rrules[0].validations = {}
+      @current_rule.hash.rrules[0].validations.day_of_month = []
+      @current_rule.hash.rrules[0].validations.day_of_week = {}
       @content.find(".monthly_options .rs_calendar_week a.selected").each (index, elm) =>
         day = parseInt($(elm).attr("day"))
         instance = parseInt($(elm).attr("instance"))
-        @current_rule.hash.validations.day_of_week[day] ||= []
-        @current_rule.hash.validations.day_of_week[day].push instance
+        @current_rule.hash.rrules[0].validations.day_of_week[day] ||= []
+        @current_rule.hash.rrules[0].validations.day_of_week[day].push instance
       @summaryUpdate()
       false
 
