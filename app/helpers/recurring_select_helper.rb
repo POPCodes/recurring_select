@@ -34,6 +34,7 @@ module RecurringSelectHelper
       if default_schedules.blank?
         if currently_selected_rule.present?
           options_array << ice_cube_rule_to_option(currently_selected_rule)
+
           options_array << separator
           options_array << [I18n.t("recurring_select.change_schedule"), "custom"]
           options_array << blank_option if options[:allow_blank]
@@ -114,7 +115,7 @@ module RecurringSelectHelper
       end
 
       def render
-        option_tags = add_options(recurring_options_for_select(value(object), @default_schedules, @options), @options, value(object))
+        option_tags = add_options(recurring_options_for_select(value, @default_schedules, @options), @options, value)
         select_content_tag(option_tags, @options, @html_options)
       end
     end
@@ -128,7 +129,6 @@ module RecurringSelectHelper
       def to_recurring_select_tag(default_schedules, options, html_options)
         html_options = recurring_select_html_options(html_options)
         add_default_name_and_id(html_options)
-        value = value(object)
         options = add_options(
           recurring_options_for_select(value, default_schedules, options),
           options, value
