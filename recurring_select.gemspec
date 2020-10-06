@@ -17,15 +17,14 @@ Gem::Specification.new do |s|
   s.test_files = Dir["test/**/*"]
 
   s.add_dependency "rails"
-  s.add_dependency "jquery-rails", ">= 3.0"
   s.add_dependency "ice_cube", ">= 0.11"
-  s.add_dependency "sass-rails", ">= 4.0"
-  s.add_dependency "coffee-rails", ">= 3.1"
+  s.add_dependency "sassc-rails"
+  s.add_dependency "coffee-rails"
 
-  s.add_development_dependency "bundler", ">= 1.3.5"
-  s.add_development_dependency "rspec-rails", ">= 2.14"
-  s.add_development_dependency "rspec", ">= 2.14"
-  s.add_development_dependency "rake", ">= 0.9.6"
+  s.add_development_dependency "bundler"
+  s.add_development_dependency "rspec"
+  s.add_development_dependency "rspec-rails"
+  s.add_development_dependency "rake"
 
   s.license = 'MIT'
 end

@@ -5,4 +5,4 @@ gem 'pg', platform: :ruby
 gem 'activerecord-jdbcpostgresql-adapter', platform: :jruby
 
 gem "rails", "~> 6.0.0"
-gem "sass-rails", "~> 6.0.0"
+gem "sassc-rails", "~> 6.0.0"
